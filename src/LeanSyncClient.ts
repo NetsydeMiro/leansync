@@ -34,13 +34,6 @@ export class LeanSyncClient<Entity> {
 
             let syncResult = await this.config.syncWithServer(clientEntities, lastSync)
 
-            await this.config.createClientEntities(syncResult.entitiesRequiringCreation, syncResult.syncStamp)
-
-            await this.config.updateClientEntities(syncResult.entitiesRequiringModification, syncResult.syncStamp)
-
-            await this.config.markRequiringConflictResolution(syncResult.entitiesRequiringConflictResolution, syncResult.syncStamp)
-
-            await this.config.markSyncedSuccessfully(syncResult.keysRequiringNoClientAction, syncResult.syncStamp)
         }
         catch(ex) {
             // we do nothing if we can't connect at the moment, and allow the next sync to handle it

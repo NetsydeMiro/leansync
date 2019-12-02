@@ -7,8 +7,8 @@ export interface KeySelector<Entity> {
     (entity: Entity): any
 }
 
-export function findEntity<Entity>(serverEntities: Array<Entity>, mobileEntity: Entity, keySelector: KeySelector<Entity>): Entity {
-    return serverEntities.find(serverEntity => keySelector(serverEntity) == keySelector(mobileEntity))
+export function findCorrespondingEntity<Entity>(entities: Array<Entity>, entity: Entity, keySelector: KeySelector<Entity>): Entity {
+    return entities.find(serverEntity => keySelector(serverEntity) == keySelector(entity))
 }
 
 export function assertNever(x: never): never {
@@ -20,10 +20,8 @@ export function isFunction(obj): obj is Function {
 }
 
 export interface SyncResult<Entity> {
-    entitiesRequiringCreation: Array<Entity>
-    entitiesRequiringModification: Array<ModifiedEntity<Entity>>
-    entitiesRequiringConflictResolution: Array<Entity>
-    keysRequiringNoClientAction: Array<Entity>
+    syncedEntities: Array<ModifiedEntity<Entity>>
+    conflictedEntities: Array<Entity>
     syncStamp: Date
 }
 
