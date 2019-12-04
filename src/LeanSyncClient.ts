@@ -20,8 +20,7 @@ export interface LeanSyncClientConfig<Entity> {
 }
 
 export class LeanSyncClient<Entity> {
-    constructor(private config: LeanSyncClientConfig<Entity>) {
-    }
+    constructor(private config: LeanSyncClientConfig<Entity>) { }
 
     async sync() {
         try {

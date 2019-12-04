@@ -1,23 +1,5 @@
 import { LeanSyncServer, LeanSyncServerConfig, ConflictResolutionStrategy } from '../src/LeanSyncServer'
-import { MockSyncedTable } from '../support/MockSyncedTable'
-import { v1 } from 'uuid'
-
-interface Note {
-    key: string
-    text: string
-    syncedAt?: Date
-}
-
-class NotesDatabase extends MockSyncedTable<Note> {}
-
-function createNotesDb(numberOfNotes: number, syncedAt: Date) : NotesDatabase {
-    let db = new NotesDatabase()
-
-    for(let ix = 1; ix <= numberOfNotes; ix++) {
-        db.add({ key: v1().toString(), text: `Note ${ix}` }, syncedAt)
-    }
-    return db
-}
+import { Note, NotesDatabase, newNote } from '../support/Note'
 
 function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictResolutionStrategy<Note>): LeanSyncServerConfig<Note> {
     let config: LeanSyncServerConfig<Note> = {
@@ -35,7 +17,7 @@ function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictRes
 }
 
 async function createSyncState(numberOfNotes: number, syncStamp: Date, conflictResolutionStrategy: ConflictResolutionStrategy<Note> = 'takeClient'): Promise<[NotesDatabase, Array<Note>, LeanSyncServer<Note>]> {
-    let db = createNotesDb(numberOfNotes, syncStamp)
+    let db = NotesDatabase.createPopulated(numberOfNotes, syncStamp)
     let clientNotes = await db.syncedSince()
     let config = createConfig(db, conflictResolutionStrategy)
     let leanSync = new LeanSyncServer(config)
@@ -51,8 +33,8 @@ describe('LeanSyncServer', () => {
         let [db, clientNotes, leanSync] = await createSyncState(0, testStart)
 
         // create a couple new entities on client end
-        clientNotes.push({ key: v1().toString(), text: 'Note 1' })
-        clientNotes.push({ key: v1().toString(), text: 'Note 2' })
+        clientNotes.push(newNote('Note 1'))
+        clientNotes.push(newNote('Note 2'))
 
         // sync them
         let syncResult = await leanSync.sync(clientNotes)
@@ -67,11 +49,12 @@ describe('LeanSyncServer', () => {
             expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
         }
 
-        // the client should be informed that the new entries synched successfully
-        expect(syncResult.syncedEntities.length).toBe(2)
+        expect(syncResult.newEntities.length).toBe(0)
         expect(syncResult.conflictedEntities.length).toBe(0)
         expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
 
+        // the client should be informed that the new entries synched successfully
+        expect(syncResult.syncedEntities.length).toBe(2)
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
             expect(syncResult.syncedEntities[ix].entity.key).toBe(clientNotes[ix].key)
@@ -99,14 +82,41 @@ describe('LeanSyncServer', () => {
         expect(db.rows[2].text).toBe(clientNotes[0].text)
         expect(db.rows[3].text).toBe(clientNotes[1].text)
 
+        expect(syncResult.newEntities.length).toBe(0)
         expect(syncResult.conflictedEntities.length).toBe(0)
         expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
 
         // client should be notified of new entries, and the fact that we should adjust their keys
+        expect(syncResult.syncedEntities.length).toBe(2)
         for(let ix = 0; ix < clientNotes.length; ix++) {
             expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
             expect(syncResult.syncedEntities[ix].entity.key).toBe(clientNotes[ix].key)
             expect(syncResult.syncedEntities[ix].newKey).toBe(db.rows[ix+2].key)
+        }
+    })
+
+    it('Notifies client of entities created since last sync', async () => {
+        let testStart = new Date()
+
+        let [db, clientNotes, leanSync] = await createSyncState(0, testStart)
+
+        // create a couple new entities on server end
+        let newSyncStamp = new Date(testStart.getTime() + 1)
+        db.add(newNote('Note 1'), newSyncStamp)
+        db.add(newNote('Note 2'), newSyncStamp)
+
+        // sync 
+        let syncResult = await leanSync.sync(clientNotes)
+
+        // the client should be informed that there were new entries created since last sync
+        expect(syncResult.syncedEntities.length).toBe(0)
+        expect(syncResult.conflictedEntities.length).toBe(0)
+        expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
+
+        expect(syncResult.newEntities.length).toBe(2)
+        for(let ix = 0; ix < db.rows.length; ix++) {
+            expect(syncResult.newEntities[ix].text).toBe(db.rows[ix].text)
+            expect(syncResult.newEntities[ix].key).toBe(db.rows[ix].key)
         }
     })
 
@@ -127,10 +137,13 @@ describe('LeanSyncServer', () => {
             expect(db.rows[ix].text).toBe(clientNotes[ix].text)
             expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(clientNotes[ix].syncedAt.getTime())
         }
-
         expect(db.rows[0].syncedAt).toEqual(db.rows[1].syncedAt)
-        expect(syncResult.syncedEntities.length).toBe(2)
+
+        expect(syncResult.newEntities.length).toBe(0)
+        expect(syncResult.conflictedEntities.length).toBe(0)
         expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
+
+        expect(syncResult.syncedEntities.length).toBe(2)
     })
 
 
@@ -150,6 +163,7 @@ describe('LeanSyncServer', () => {
             expect(db.rows[ix].text).not.toBe(clientNote.text)
         })
 
+        expect(syncResult.newEntities.length).toBe(0)
         expect(syncResult.conflictedEntities.length).toBe(0)
         expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
 
@@ -175,6 +189,7 @@ describe('LeanSyncServer', () => {
             expect(db.rows[ix].text).not.toBe(clientNote.text)
         })
 
+        expect(syncResult.newEntities.length).toBe(0)
         expect(syncResult.syncedEntities.length).toBe(0)
         expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
 
@@ -185,8 +200,38 @@ describe('LeanSyncServer', () => {
     })
 
 
-    // Add test to ensure that custom function modifies the sync result
     it('Runs custom conflict resolution strategy if specified', async () => {
+        let testStart = new Date()
+
+        let customConflictResolver = jest.fn()
+        let [db, clientNotes, leanSync] = await createSyncState(2, testStart, customConflictResolver)
+
+        clientNotes[0].text = 'Updated 1'
+        clientNotes[1].text = 'Updated 2'
+
+        let lastSync = new Date(2001, 1, 1)
+        let syncResult = await leanSync.sync(clientNotes, lastSync)
+
+        clientNotes.forEach((clientNote, ix) => {
+            expect(db.rows[ix].text).not.toBe(clientNote.text)
+        })
+
+        expect(syncResult.conflictedEntities.length).toBe(0)
+        expect(syncResult.syncedEntities.length).toBe(0)
+        expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
+
+        expect(customConflictResolver.mock.calls.length).toBe(2)
+
+        clientNotes.forEach((clientNote, ix) => {
+            expect(customConflictResolver.mock.calls[ix][0]).toBe(clientNote)
+            expect(customConflictResolver.mock.calls[ix][1]).toEqual(db.rows[ix])
+            expect(customConflictResolver.mock.calls[ix][2].getTime()).toBeGreaterThanOrEqual(testStart.getTime())
+            expect(customConflictResolver.mock.calls[ix][3]).toBe(syncResult)
+        })
+    })
+
+
+    it('Custom conflict resolution strategy can modify sync result', async () => {
         let testStart = new Date()
 
         let customConflictResolver = jest.fn()

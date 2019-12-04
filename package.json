@@ -6,7 +6,7 @@
   "scripts": {
     "start": "jest",
     "test": "jest",
-    "dev": "jest --watchAll", 
+    "dev": "jest --watch", 
     "report_coverage": "jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "author": "Miro Koprnicky",
