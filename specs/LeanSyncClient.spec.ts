@@ -1,9 +1,29 @@
-import { LeanSyncServer, LeanSyncServerConfig, ConflictResolutionStrategy } from '../src/LeanSyncServer'
-import { MockSyncedTable } from '../support/MockSyncedTable'
-import { v1 } from 'uuid'
+import { SyncResult } from '../src/shared'
+import { Note, NotesDatabase } from '../support/Note'
+import { LeanSyncClientConfig } from '../src/LeanSyncClient'
 
 describe('LeanSyncClient', () => {
-    test('A Test', () => {
+
+    test('Creates new entities', () => {
+        let testStart = new Date()
+
+        let db = NotesDatabase.createPopulated(2, testStart)
+
+        let config: LeanSyncClientConfig<Note> = {
+            keySelector: (note) => note.key,
+            getClientEntitiesRequiringSync: () => db.getRequiringSync(),
+            getClientEntities: (keys: Array<any>) => db.getByKey(keys),
+            getLastSyncStamp: async () => testStart,
+
+            updateEntity: (note, syncStamp, newKey?) => db.update(note, syncStamp, newKey),
+            createEntity: (note, syncStamp) => db.add(note, syncStamp),
+            syncWithServer: async (notes, lastSync) => {
+                let result: SyncResult<Note>
+
+                return result
+            }
+
+        }
 
     })
 })

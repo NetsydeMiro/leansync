@@ -6,8 +6,8 @@ function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictRes
         keySelector: (note) => note.key,
         isNewEntity: (note) => !note.syncedAt,
         areEqual: (note1, note2) => note1.text == note2.text, 
-        getServerEntities: (keys) => db.byKey(keys), 
-        getServerEntitiesSyncedSince: (syncStamp) => db.syncedSince(syncStamp), 
+        getServerEntities: (keys) => db.getByKey(keys), 
+        getServerEntitiesSyncedSince: (syncStamp) => db.getSyncedSince(syncStamp), 
         updateEntity: (clientEntity, syncStamp) => db.update(clientEntity, syncStamp), 
         createEntity: (clientEntity, syncStamp) => db.add(clientEntity, syncStamp), 
         conflictResolutionStrategy: conflictResolutionStrategy
@@ -18,7 +18,7 @@ function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictRes
 
 async function createSyncState(numberOfNotes: number, syncStamp: Date, conflictResolutionStrategy: ConflictResolutionStrategy<Note> = 'takeClient'): Promise<[NotesDatabase, Array<Note>, LeanSyncServer<Note>]> {
     let db = NotesDatabase.createPopulated(numberOfNotes, syncStamp)
-    let clientNotes = await db.syncedSince()
+    let clientNotes = await db.getSyncedSince()
     let config = createConfig(db, conflictResolutionStrategy)
     let leanSync = new LeanSyncServer(config)
 

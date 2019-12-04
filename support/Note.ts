@@ -5,11 +5,12 @@ import { MockSyncedTable } from './MockSyncedTable'
 export interface Note {
     key: string
     text: string
+    updatedAt: Date
     syncedAt?: Date
 }
 
 export function newNote(text: string): Note {
-    return { key: v1().toString(), text }
+    return { key: v1().toString(), text, updatedAt: new Date() }
 }
 
 export class NotesDatabase extends MockSyncedTable<Note> {
@@ -18,7 +19,7 @@ export class NotesDatabase extends MockSyncedTable<Note> {
         let db = new NotesDatabase()
 
         for (let ix = 1; ix <= numberOfNotes; ix++) {
-            db.add({ key: v1().toString(), text: `Note ${ix}` }, syncedAt)
+            db.add(newNote(`Note ${ix}`), syncedAt)
         }
         return db
     }
