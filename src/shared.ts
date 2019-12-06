@@ -11,16 +11,9 @@ export interface KeySelector<Entity> {
     (entity: Entity): any
 }
 
-/*
-export function findCorrespondingEntity<Entity>(entities: Array<Entity>, entity: Entity, keySelector: KeySelector<Entity>): Entity 
-
-export function findCorrespondingEntity<Entity>(entities: Array<ModifiedEntity<Entity>>, entity: Entity, keySelector: KeySelector<Entity>): Entity 
-
-export function findCorrespondingEntity<Entity>(entities: Array<Entity | ModifiedEntity<Entity>>, entity: Entity, keySelector: KeySelector<Entity>): Entity {
-    let ents = entities.map(e => isModifiedEntity(e) ? e.entity : e)
-    return ents.find(serverEntity => keySelector(serverEntity) == keySelector(entity))
+export interface LastUpdatedSelector<Entity> {
+    (entity: Entity): Date
 }
-*/
 
 export function findCorrespondingEntity<Entity>(entities: Array<Entity>, entity: Entity, keySelector: KeySelector<Entity>): Entity {
     return entities.find(serverEntity => keySelector(serverEntity) == keySelector(entity))

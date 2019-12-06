@@ -1,7 +1,7 @@
 // TODO: Handle client needs to create entities
-import { SyncResult, isFunction, assertNever, ConflictResolutionResult, KeySelector, findCorrespondingEntity } from "./shared"
+import { SyncResult, isFunction, assertNever, ConflictResolutionResult, KeySelector, findCorrespondingEntity, LastUpdatedSelector } from "./shared"
 
-export type BasicConflictResolutionStrategy = "takeServer" | "takeClient" | "askClient"
+export type BasicConflictResolutionStrategy = "takeServer" | "takeClient" | "lastUpdated" | "askClient"
 
 export interface CustomConflictResolver<Entity> {
     (this: LeanSyncServerConfig<Entity>, clientEntity: Entity, serverEntity: Entity, syncStamp: Date, result: SyncResult<Entity>): void
@@ -11,7 +11,9 @@ export type ConflictResolutionStrategy<Entity> = BasicConflictResolutionStrategy
 
 export interface LeanSyncServerConfig<Entity> {
     // returns Enitity's unique key
-    keySelector: KeySelector<Entity>
+    entityKey: KeySelector<Entity>
+    // returns datetime of Entity's last update
+    entityLastUpdated: LastUpdatedSelector<Entity>
     // informs server that a client entity is one that was newly created (not yet synced)
     isNewEntity: (entity: Entity) => boolean
     // informs server that entities are the same (no update required)
@@ -56,7 +58,7 @@ export class LeanSyncServer<Entity> {
                     correspondingServerEntities,
                     serverEntitiesUpdatedSinceLastSync
                 ] = await Promise.all([
-                    this.config.getServerEntities(clientEntities.map(this.config.keySelector)),
+                    this.config.getServerEntities(clientEntities.map(this.config.entityKey)),
                     this.config.getServerEntitiesSyncedSince(lastSynced)
                 ])
 
@@ -65,35 +67,47 @@ export class LeanSyncServer<Entity> {
                     if (this.config.isNewEntity(clientEntity)) {
                         // create new entities
                         await this.handleCreate(clientEntity, syncStamp, syncResult)
-                        handledKeys[this.config.keySelector(clientEntity)] = true
+                        handledKeys[this.config.entityKey(clientEntity)] = true
                     }
                     else {
-                        let conflictedServerEntity = findCorrespondingEntity(serverEntitiesUpdatedSinceLastSync, clientEntity, this.config.keySelector)
+                        let conflictedServerEntity = findCorrespondingEntity(serverEntitiesUpdatedSinceLastSync, clientEntity, this.config.entityKey)
 
                         if (conflictedServerEntity) {
                             if (this.config.areEqual(clientEntity, conflictedServerEntity)) {
                                 // we have an entity that's been updated by another client sync, but has same value
                                 syncResult.syncedEntities.push({ entity: clientEntity })
-                                handledKeys[this.config.keySelector(clientEntity)] = true
+                                handledKeys[this.config.entityKey(clientEntity)] = true
                             }
                             else {
                                 if (isFunction(this.config.conflictResolutionStrategy)) {
                                     // user has specified their own custom conflict resolution strategy
                                     this.config.conflictResolutionStrategy(clientEntity, conflictedServerEntity, syncStamp, syncResult)
-                                    handledKeys[this.config.keySelector(clientEntity)] = true
+                                    handledKeys[this.config.entityKey(clientEntity)] = true
                                 }
                                 else {
                                     switch (this.config.conflictResolutionStrategy) {
 
                                         case 'takeClient':
-                                            // client update overrides any other syncs
+                                            // client update overrides server
                                             await this.config.updateEntity(clientEntity, syncStamp)
                                             syncResult.syncedEntities.push({ entity: clientEntity })
                                             break
 
                                         case 'takeServer':
-                                            // server update overrides this sync
+                                            // server update overrides client
                                             syncResult.syncedEntities.push({ entity: conflictedServerEntity })
+                                            break
+
+                                        case 'lastUpdated':
+                                            if (this.config.entityLastUpdated(clientEntity) > this.config.entityLastUpdated(conflictedServerEntity)) {
+                                                // client update was last, so we override server
+                                                await this.config.updateEntity(clientEntity, syncStamp)
+                                                syncResult.syncedEntities.push({ entity: clientEntity })
+                                            }
+                                            else {
+                                                // server update was last, so we override client
+                                                syncResult.syncedEntities.push({ entity: conflictedServerEntity })
+                                            }
                                             break
 
                                         case 'askClient':
@@ -105,14 +119,14 @@ export class LeanSyncServer<Entity> {
                                         default: assertNever(this.config.conflictResolutionStrategy)
                                     }
 
-                                    handledKeys[this.config.keySelector(clientEntity)] = true
+                                    handledKeys[this.config.entityKey(clientEntity)] = true
                                 }
                             }
 
                         }
                         else {
                             // we don't have a conflicted state, so we update the server entity
-                            let serverEntity = findCorrespondingEntity(correspondingServerEntities, clientEntity, this.config.keySelector)
+                            let serverEntity = findCorrespondingEntity(correspondingServerEntities, clientEntity, this.config.entityKey)
 
                             if (serverEntity) {
                                 await this.config.updateEntity(clientEntity, syncStamp)
@@ -124,7 +138,7 @@ export class LeanSyncServer<Entity> {
                                 await this.handleCreate(clientEntity, syncStamp, syncResult)
                             }
 
-                            handledKeys[this.config.keySelector(clientEntity)] = true
+                            handledKeys[this.config.entityKey(clientEntity)] = true
                         }
                     }
                 }
@@ -132,7 +146,7 @@ export class LeanSyncServer<Entity> {
                 // any server entity that was updated since last sync
                 for (let serverEntity of serverEntitiesUpdatedSinceLastSync) {
                     // that hasn't been handled by a create or update operation
-                    if (!handledKeys[this.config.keySelector(serverEntity)]) {
+                    if (!handledKeys[this.config.entityKey(serverEntity)]) {
                         // is one that doesn't have a corresponding entry on the client
                         // so should be created there
                         syncResult.newEntities.push(serverEntity)
@@ -161,7 +175,7 @@ export class LeanSyncServer<Entity> {
                     await this.config.getServerEntitiesSyncedSince(lastSynced)
 
                 let conflictedAgain = serverEntitiesUpdatedSinceLastSync.find(serverEntity =>
-                    this.config.keySelector(serverEntity) == this.config.keySelector(resolvedEntity)
+                    this.config.entityKey(serverEntity) == this.config.entityKey(resolvedEntity)
                 )
 
                 if (conflictedAgain) {
@@ -186,7 +200,7 @@ export class LeanSyncServer<Entity> {
         // we inform the user that a new key has been assigned 
         // due to a collision, or because temp keys are used at client 
         // and permanent keys assigned at server
-        if (newKey && newKey != this.config.keySelector(mobileEntity)) {
+        if (newKey && newKey != this.config.entityKey(mobileEntity)) {
             syncResult.syncedEntities.push({ entity: mobileEntity, newKey })
         }
         else syncResult.syncedEntities.push({ entity: mobileEntity })
