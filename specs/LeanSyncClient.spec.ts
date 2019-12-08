@@ -10,7 +10,7 @@ describe('LeanSyncClient', () => {
         let db = NotesDatabase.createPopulated(2, testStart)
 
         let config: LeanSyncClientConfig<Note> = {
-            keySelector: (note) => note.key,
+            keySelector: (note) => note.id,
             getClientEntitiesRequiringSync: () => db.getRequiringSync(),
             getClientEntities: (keys: Array<any>) => db.getByKey(keys),
             getLastSyncStamp: async () => testStart,

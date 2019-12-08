@@ -3,14 +3,14 @@ import { v1 } from 'uuid'
 import { MockSyncedTable } from './MockSyncedTable'
 
 export interface Note {
-    key: string
+    id: string
     text: string
     updatedAt: Date
     syncedAt?: Date
 }
 
-export function newNote(text: string, updatedAt: Date): Note {
-    return { key: v1().toString(), text, updatedAt }
+export function newNote(text: string, updatedAt: Date = new Date()): Note {
+    return { id: v1().toString(), text, updatedAt }
 }
 
 export class NotesDatabase extends MockSyncedTable<Note> {

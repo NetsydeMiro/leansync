@@ -3,14 +3,14 @@ import { Note, NotesDatabase, newNote } from '../support/Note'
 
 function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictResolutionStrategy<Note>): LeanSyncServerConfig<Note> {
     let config: LeanSyncServerConfig<Note> = {
-        entityKey: (note) => note.key,
+        entityKey: (note) => note.id,
         entityLastUpdated: (note) => note.updatedAt, 
         isNewEntity: (note) => !note.syncedAt,
-        areEqual: (note1, note2) => note1.text == note2.text, 
+        areEntitiesEqual: (note1, note2) => note1.text == note2.text, 
         getServerEntities: (keys) => db.getByKey(keys), 
         getServerEntitiesSyncedSince: (syncStamp) => db.getSyncedSince(syncStamp), 
-        updateEntity: (clientEntity, syncStamp) => db.update(clientEntity, syncStamp), 
-        createEntity: (clientEntity, syncStamp) => db.add(clientEntity, syncStamp), 
+        updateServerEntity: (clientEntity, syncStamp) => db.update(clientEntity, syncStamp), 
+        createServerEntity: (clientEntity, syncStamp) => db.add(clientEntity, syncStamp), 
         conflictResolutionStrategy: conflictResolutionStrategy
     }
 
@@ -48,7 +48,7 @@ describe('LeanSyncServer', () => {
         // each server note should match what client submitted
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(db.rows[ix].text).toBe(clientNotes[ix].text)
-            expect(db.rows[ix].key).toBe(clientNotes[ix].key)
+            expect(db.rows[ix].id).toBe(clientNotes[ix].id)
             expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
         }
 
@@ -60,7 +60,7 @@ describe('LeanSyncServer', () => {
         expect(syncResult.syncedEntities.length).toBe(2)
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
-            expect(syncResult.syncedEntities[ix].entity.key).toBe(clientNotes[ix].key)
+            expect(syncResult.syncedEntities[ix].entity.id).toBe(clientNotes[ix].id)
             expect(syncResult.syncedEntities[ix].newKey).toBeUndefined()
         }
     })
@@ -93,8 +93,8 @@ describe('LeanSyncServer', () => {
         expect(syncResult.syncedEntities.length).toBe(2)
         for(let ix = 0; ix < clientNotes.length; ix++) {
             expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
-            expect(syncResult.syncedEntities[ix].entity.key).toBe(clientNotes[ix].key)
-            expect(syncResult.syncedEntities[ix].newKey).toBe(db.rows[ix+2].key)
+            expect(syncResult.syncedEntities[ix].entity.id).toBe(clientNotes[ix].id)
+            expect(syncResult.syncedEntities[ix].newKey).toBe(db.rows[ix+2].id)
         }
     })
 
@@ -119,7 +119,7 @@ describe('LeanSyncServer', () => {
         expect(syncResult.newEntities.length).toBe(2)
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(syncResult.newEntities[ix].text).toBe(db.rows[ix].text)
-            expect(syncResult.newEntities[ix].key).toBe(db.rows[ix].key)
+            expect(syncResult.newEntities[ix].id).toBe(db.rows[ix].id)
         }
     })
 

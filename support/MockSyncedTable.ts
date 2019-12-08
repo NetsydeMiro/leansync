@@ -1,7 +1,7 @@
 import { v1 } from 'uuid'
 
 export interface Entity {
-    key: any
+    id: any
     updatedAt: Date
     syncedAt?: Date
     conflict?: string
@@ -21,7 +21,7 @@ export class MockSyncedTable<EntityType extends Entity> {
     protected clone = (rows: Array<EntityType>) => rows.map(r => Object.assign({}, r))
 
     async getByKey(keys: Array<any>): Promise<Array<EntityType>> {
-        let rows = this.rows.filter(r => keys.includes(r.key))
+        let rows = this.rows.filter(r => keys.includes(r.id))
         return this.clone(rows)
     }
 
@@ -31,13 +31,13 @@ export class MockSyncedTable<EntityType extends Entity> {
     }
 
     async update(entity: EntityType, syncStamp: Date, newKey?: any): Promise<void> {
-        let row = this.rows.find(r => r.key == entity.key)
+        let row = this.rows.find(r => r.id == entity.id)
 
         for(let key of Object.keys(entity)) {
             row[key] = entity[key]
         }
 
-        if (newKey) row.key = newKey
+        if (newKey) row.id = newKey
 
         row.syncedAt = syncStamp
     }
@@ -46,13 +46,13 @@ export class MockSyncedTable<EntityType extends Entity> {
         let row = Object.assign({}, entity)
         row.syncedAt = syncStamp
 
-        while (this.rows.some(r => r.key == row.key)) {
-            row.key = this.newKey()
+        while (this.rows.some(r => r.id == row.id)) {
+            row.id = this.newKey()
         }
 
         this.rows.push(row)
 
-        return row.key
+        return row.id
     }
 
     // client function
@@ -63,7 +63,7 @@ export class MockSyncedTable<EntityType extends Entity> {
 
     // client function
     async MarkConflicted(serverEntity: EntityType): Promise<void> {
-        let entity = this.rows.find(r => r.key == serverEntity.key)
+        let entity = this.rows.find(r => r.id == serverEntity.id)
 
         if (entity) entity.conflict = JSON.stringify(serverEntity)
     }
