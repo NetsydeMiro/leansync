@@ -22,13 +22,66 @@ describe('LeanSyncServer', () => {
         let config: LeanSyncServerConfig<Note> = mockConfig()
 
         let leanSync = new LeanSyncServer(config)
-        let note = newNote('Note 1')
+        let clientNote = newNote('Note 1')
 
-        await leanSync.sync([note])
-
-        // create a new entity 
+        let syncResult = await leanSync.sync([clientNote])
         let mockCreate = config.createServerEntity as jest.Mock
+
+        // new entity is created on server side
         expect(mockCreate.mock.calls.length).toBe(1)
+        expect(mockCreate.mock.calls[0][0]).toBe(clientNote)
+
+        // client is informed of sync
+        expect(syncResult.syncedEntities.length).toBe(1)
+        expect(syncResult.syncedEntities[0].entity).toBe(clientNote)
+        expect(syncResult.syncedEntities[0].newKey).toBeUndefined()
     })
 
+    it('Creates new entity and informs of key conflict', async () => {
+        let config: LeanSyncServerConfig<Note> = mockConfig()
+
+        let leanSync = new LeanSyncServer(config)
+        let clientNote = newNote('Note 1')
+
+        let newGuidId = 'NEW-GUID-VALUE'
+        let mockCreate = jest.fn().mockReturnValue('NEW-GUID-VALUE')
+        config.createServerEntity = mockCreate
+
+        let syncResult = await leanSync.sync([clientNote])
+
+        // new entity is created on server side
+        expect(mockCreate.mock.calls.length).toBe(1)
+        expect(mockCreate.mock.calls[0][0]).toBe(clientNote)
+
+        // client is informed of sync
+        expect(syncResult.syncedEntities.length).toBe(1)
+        expect(syncResult.syncedEntities[0].entity).toBe(clientNote)
+        expect(syncResult.syncedEntities[0].newKey).toBe(newGuidId)
+    })
+
+    it.skip('Updates an existing entity', async () => {
+        let config: LeanSyncServerConfig<Note> = mockConfig()
+
+        let leanSync = new LeanSyncServer(config)
+        let clientNote = newNote('Note 1')
+
+        let serverNote = Object.assign({}, clientNote)
+        serverNote.syncedAt = new Date()
+
+        let mockGet = jest.fn().mockReturnValue([serverNote])
+        config.getServerEntities = mockGet
+
+        let syncResult = await leanSync.sync([clientNote])
+
+        let mockUpdate = config.updateServerEntity as jest.Mock
+
+        // existing entity is updated on server side
+        expect(mockUpdate.mock.calls.length).toBe(1)
+        expect(mockUpdate.mock.calls[0][0]).toBe(clientNote)
+
+        // client is informed of sync
+        expect(syncResult.syncedEntities.length).toBe(1)
+        expect(syncResult.syncedEntities[0].entity).toBe(clientNote)
+        expect(syncResult.syncedEntities[0].newKey).toBeUndefined()
+    })
 })
