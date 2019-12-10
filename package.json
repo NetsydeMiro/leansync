@@ -7,7 +7,7 @@
     "start": "jest",
     "test": "jest",
     "dev": "jest --watch", 
-    "report_coverage": "jest --coverage --coverageReporters=text-lcov | coveralls"
+    "report_coverage": "jest --coverage --collectCoverageFrom=src/*.ts --coverageReporters=text-lcov | coveralls"
   },
   "author": "Miro Koprnicky",
   "license": "ISC",
