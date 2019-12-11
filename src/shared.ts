@@ -15,7 +15,7 @@ export interface LastUpdatedSelector<Entity> {
     (entity: Entity): Date
 }
 
-export function findCorrespondingEntity<Entity>(entities: Array<Entity>, entity: Entity, keySelector: KeySelector<Entity>): Entity {
+export function findCorrespondingEntity<Entity>(entities: Array<Entity>, entity: Entity, keySelector: KeySelector<Entity>): Entity | undefined {
     return entities.find(serverEntity => keySelector(serverEntity) == keySelector(entity))
 }
 
@@ -23,7 +23,7 @@ export function assertNever(x: never): never {
     throw new Error("Unexpected object: " + x);
 }
 
-export function isFunction(obj): obj is Function {
+export function isFunction(obj: any): obj is Function {
     return obj && {}.toString.call(obj) === '[object Function]';
 }
 

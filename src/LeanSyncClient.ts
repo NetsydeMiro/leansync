@@ -54,7 +54,7 @@ export class LeanSyncClient<Entity> {
         }
 
         for (let conflictedEntity of syncResult.conflictedEntities) {
-            await this.config.markRequiringConflictResolution(conflictedEntity, syncResult.syncStamp)
+            await this.config.markRequiringConflictResolution?.(conflictedEntity, syncResult.syncStamp)
         }
     }
 }

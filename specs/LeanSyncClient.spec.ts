@@ -9,6 +9,7 @@ describe('LeanSyncClient', () => {
 
         let db = NotesDatabase.createPopulated(2, testStart)
 
+        /*
         let config: LeanSyncClientConfig<Note> = {
             keySelector: (note) => note.id,
             getClientEntitiesRequiringSync: () => db.getRequiringSync(),
@@ -24,6 +25,7 @@ describe('LeanSyncClient', () => {
             }
 
         }
+        */
 
     })
 })
