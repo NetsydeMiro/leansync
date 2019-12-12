@@ -163,10 +163,10 @@ export class LeanSyncServer<Entity> {
     async resolveConflict(resolvedEntity: Entity, lastSynced: Date): Promise<ConflictResolutionResult<Entity>> {
 
         return new Promise<ConflictResolutionResult<Entity>>(async (resolve, reject) => {
-            this.config.startTransaction?.()
             let syncStamp = new Date()
             let result: ConflictResolutionResult<Entity> = { syncStamp }
 
+            this.config.startTransaction?.()
             try {
                 let serverEntitiesUpdatedSinceLastSync =
                     await this.config.getServerEntitiesSyncedSince(lastSynced)

@@ -70,5 +70,29 @@ describe('LeanSyncServer', () => {
             expect(resolveConflictResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
         })
 
+        it('Rolls back transaction if an error is thrown', async () => {
+            expect.assertions(2)
+
+            let testStart = new Date()
+            let config: LeanSyncServerConfig<Note> = mockConfig('askClient')
+
+            let leanSync = new LeanSyncServer(config)
+            let clientNote = newNote('Note 1') 
+
+            let error = new Error()
+            let mockGet = jest.fn().mockRejectedValue(error)
+            config.getServerEntitiesSyncedSince = mockGet
+
+            let mockRollBack = jest.fn()
+            config.rollBackTransaction = mockRollBack
+           
+            try {
+                await leanSync.resolveConflict(clientNote, testStart)
+            }
+            catch (e) {
+                expect(e).toBe(error)
+                expect(mockRollBack.mock.calls.length).toBe(1)
+            }
+        })
     })
 })

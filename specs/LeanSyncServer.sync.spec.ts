@@ -265,5 +265,29 @@ describe('LeanSyncServer', () => {
             expect(syncResult.conflictedEntities[0]).toBe(serverNote)
         })
 
+        it('Rolls back transaction if an error is thrown', async () => {
+            expect.assertions(2)
+
+            let config: LeanSyncServerConfig<Note> = mockConfig()
+
+            let leanSync = new LeanSyncServer(config)
+            let clientNote = newNote('Note 1')
+
+            let error = new Error()
+            let mockCreate = jest.fn().mockRejectedValue(error)
+            config.createServerEntity = mockCreate
+
+            let mockRollBack = jest.fn()
+            config.rollBackTransaction = mockRollBack
+
+            try {
+                await leanSync.sync([clientNote])
+            }
+            catch (e) {
+                expect(e).toBe(error)
+                // transaction should be rolled back
+                expect(mockRollBack.mock.calls.length).toBe(1)
+            }
+        })
     })
 })
