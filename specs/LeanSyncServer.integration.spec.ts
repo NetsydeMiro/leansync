@@ -5,7 +5,6 @@ function createConfig(db: NotesDatabase, conflictResolutionStrategy: ConflictRes
     let config: LeanSyncServerConfig<Note> = {
         entityKey: (note) => note.id,
         entityLastUpdated: (note) => note.updatedAt, 
-        isNewEntity: (note) => !note.syncedAt,
         areEntitiesEqual: (note1, note2) => note1.text == note2.text, 
         getServerEntities: (keys) => db.getByKey(keys), 
         getServerEntitiesSyncedSince: (syncStamp) => db.getSyncedSince(syncStamp), 
@@ -61,40 +60,7 @@ describe('LeanSyncServer', () => {
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
             expect(syncResult.syncedEntities[ix].entity.id).toBe(clientNotes[ix].id)
-            expect(syncResult.syncedEntities[ix].newKey).toBeUndefined()
-        }
-    })
-
-    it('Creates new entities and notifies client of key updates in case of conflict', async () => {
-        let testStart = new Date()
-
-        let [db, clientNotes, leanSync] = await createSyncState(2, testStart)
-
-        // alter client notes so that it appears we've created new ones with existing ids
-        clientNotes[0].syncedAt = null
-        clientNotes[0].text = 'Note 3'
-        clientNotes[1].syncedAt = null
-        clientNotes[1].text = 'Note 4'
-
-        let syncResult = await leanSync.sync(clientNotes)
-
-        // server creates new entities
-        expect(db.rows.length).toBe(4)
-
-        // server entities match what we created
-        expect(db.rows[2].text).toBe(clientNotes[0].text)
-        expect(db.rows[3].text).toBe(clientNotes[1].text)
-
-        expect(syncResult.newEntities.length).toBe(0)
-        expect(syncResult.conflictedEntities.length).toBe(0)
-        expect(syncResult.syncStamp.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
-
-        // client should be notified of new entries, and the fact that we should adjust their keys
-        expect(syncResult.syncedEntities.length).toBe(2)
-        for(let ix = 0; ix < clientNotes.length; ix++) {
-            expect(syncResult.syncedEntities[ix].entity.text).toBe(clientNotes[ix].text)
-            expect(syncResult.syncedEntities[ix].entity.id).toBe(clientNotes[ix].id)
-            expect(syncResult.syncedEntities[ix].newKey).toBe(db.rows[ix+2].id)
+            expect(syncResult.syncedEntities[ix].clientKey).toBeUndefined()
         }
     })
 

@@ -1,6 +1,6 @@
 export interface ModifiedEntity<Entity> {
     entity: Entity
-    newKey?: any
+    clientKey?: any
 }
 
 export function isModifiedEntity<Entity>(obj: Entity | ModifiedEntity<Entity>): obj is ModifiedEntity<Entity> {

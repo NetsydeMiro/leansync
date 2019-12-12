@@ -30,7 +30,7 @@ export class MockSyncedTable<EntityType extends Entity> {
         return this.clone(rows)
     }
 
-    async update(entity: EntityType, syncStamp: Date, newKey?: any): Promise<void> {
+    async update(entity: EntityType, syncStamp: Date, newKey?: any): Promise<EntityType> {
         let row = this.rows.find(r => r.id == entity.id)
 
         for(let key of Object.keys(entity)) {
@@ -40,9 +40,11 @@ export class MockSyncedTable<EntityType extends Entity> {
         if (newKey) row.id = newKey
 
         row.syncedAt = syncStamp
+
+        return Object.assign(row, {})
     }
 
-    async add(entity: EntityType, syncStamp: Date): Promise<any> {
+    async add(entity: EntityType, syncStamp: Date): Promise<EntityType> {
         let row = Object.assign({}, entity)
         row.syncedAt = syncStamp
 
@@ -52,7 +54,7 @@ export class MockSyncedTable<EntityType extends Entity> {
 
         this.rows.push(row)
 
-        return row.id
+        return Object.assign({}, row)
     }
 
     // client function

@@ -5,7 +5,6 @@ function mockConfig(conflictResolutionStrategy: ConflictResolutionStrategy<Note>
     let config: LeanSyncServerConfig<Note> = {
         entityKey: (note) => note.id,
         entityLastUpdated: (note) => note.updatedAt,
-        isNewEntity: (note) => !note.syncedAt,
         areEntitiesEqual: (note1, note2) => note1.id == note2.id && note1.text == note2.text,
         getServerEntities: jest.fn().mockReturnValue([]),
         getServerEntitiesSyncedSince: jest.fn().mockReturnValue([]),

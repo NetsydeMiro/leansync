@@ -50,7 +50,7 @@ export class LeanSyncClient<Entity> {
         }
 
         for (let modifiedEntity of syncResult.syncedEntities) {
-            await this.config.updateEntity(modifiedEntity.entity, syncResult.syncStamp, modifiedEntity.newKey)
+            await this.config.updateEntity(modifiedEntity.entity, syncResult.syncStamp, modifiedEntity.clientKey)
         }
 
         for (let conflictedEntity of syncResult.conflictedEntities) {

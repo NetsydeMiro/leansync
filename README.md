@@ -5,3 +5,7 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/NetsydeMiro/leansync/badge.svg?targetFile=package.json)](https://snyk.io/test/github/NetsydeMiro/leansync?targetFile=package.json)
 
 Minimal, non-opinionated, single server, multiple client sync algorithm. 
+
+## License
+
+LeanSync is [MIT licensed](./LICENSE).
