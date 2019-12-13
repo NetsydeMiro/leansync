@@ -8,10 +8,11 @@ export interface LeanSyncClientConfig<Entity> {
     getClientEntitiesRequiringSync: () => Promise<Array<Entity>>
     getClientEntities: (keys: Array<any>) => Promise<Array<Entity>>
     getLastSyncStamp: () => Promise<Date>
+    markSyncStamp: (syncStamp: Date) => Promise<void>
 
     // writing to client store
-    updateEntity: (entity: Entity, syncStamp: Date, newKey?: any) => Promise<void>
-    createEntity: (entity: Entity, syncStamp: Date) => Promise<any>
+    updateEntity: (entity: Entity, syncStamp: Date, originalKey?: any) => Promise<void>
+    createEntity: (entity: Entity, syncStamp: Date) => Promise<void>
     markRequiringConflictResolution?: (entity: Entity, syncStamp: Date) => Promise<void>
 
     // communicating with server store
@@ -44,6 +45,7 @@ export class LeanSyncClient<Entity> {
         }
     }
 
+    // TODO: add transaction support?
     async processSyncResult(syncResult: SyncResult<Entity>) {
         for (let newEntity of syncResult.newEntities) {
             await this.config.createEntity(newEntity, syncResult.syncStamp)
@@ -56,6 +58,8 @@ export class LeanSyncClient<Entity> {
         for (let conflictedEntity of syncResult.conflictedEntities) {
             await this.config.markRequiringConflictResolution?.(conflictedEntity, syncResult.syncStamp)
         }
+
+        await this.config.markSyncStamp(syncResult.syncStamp)
     }
 }
 

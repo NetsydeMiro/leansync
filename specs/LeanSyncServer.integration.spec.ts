@@ -25,8 +25,6 @@ async function createSyncState(numberOfNotes: number, syncStamp: Date, conflictR
     return [db, clientNotes, leanSync]
 }
 
-// TODO: break tests into more granular pieces.  
-// Organize by resolution strategy and parts under test (db updates, syncResult properties, etc.)
 describe('LeanSyncServer', () => {
 
     it('Creates new entities', async () => {
