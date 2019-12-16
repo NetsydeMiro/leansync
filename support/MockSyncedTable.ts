@@ -44,7 +44,7 @@ export class MockSyncedTable<EntityType extends Entity> {
         return Object.assign(row, {})
     }
 
-    async add(entity: EntityType, syncStamp: Date): Promise<EntityType> {
+    async add(entity: EntityType, syncStamp?: Date): Promise<EntityType> {
         let row = Object.assign({}, entity)
         row.syncedAt = syncStamp
 
