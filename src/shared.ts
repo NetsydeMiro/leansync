@@ -27,14 +27,14 @@ export function isFunction(obj: any): obj is Function {
     return obj && {}.toString.call(obj) === '[object Function]';
 }
 
-export interface SyncResult<Entity> {
+export interface SyncResponse<Entity> {
     syncedEntities: Array<ModifiedEntity<Entity>>
     newEntities: Array<Entity>
     conflictedEntities: Array<Entity>
     syncStamp: Date
 }
 
-export interface ConflictResolutionResult<Entity> {
+export interface ConflictResolutionResponse<Entity> {
     stillRequiringConflictResolution?: Entity
     syncStamp: Date
 }

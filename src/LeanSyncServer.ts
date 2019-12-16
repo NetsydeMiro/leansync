@@ -1,9 +1,9 @@
-import { SyncResult, isFunction, assertNever, ConflictResolutionResult, KeySelector, findCorrespondingEntity, LastUpdatedSelector } from "./shared"
+import { SyncResponse, isFunction, assertNever, ConflictResolutionResponse, KeySelector, findCorrespondingEntity, LastUpdatedSelector } from "./shared"
 
 export type BasicConflictResolutionStrategy = "takeServer" | "takeClient" | "lastUpdated" | "askClient"
 
 export interface CustomConflictResolver<Entity> {
-    (this: LeanSyncServerConfig<Entity>, clientEntity: Entity, serverEntity: Entity, syncStamp: Date, result: SyncResult<Entity>): void
+    (this: LeanSyncServerConfig<Entity>, clientEntity: Entity, serverEntity: Entity, syncStamp: Date, result: SyncResponse<Entity>): void
 }
 
 export type ConflictResolutionStrategy<Entity> = BasicConflictResolutionStrategy | CustomConflictResolver<Entity>
@@ -36,13 +36,13 @@ export class LeanSyncServer<Entity> {
     constructor(private config: LeanSyncServerConfig<Entity>) { }
 
     // handles sync requests made by client
-    async sync(clientEntities: Array<Entity>, lastSynced?: Date): Promise<SyncResult<Entity>> {
-        return new Promise<SyncResult<Entity>>(async (resolve, reject) => {
+    async sync(clientEntities: Array<Entity>, lastSynced?: Date): Promise<SyncResponse<Entity>> {
+        return new Promise<SyncResponse<Entity>>(async (resolve, reject) => {
             this.config.startTransaction?.()
 
             let syncStamp = new Date()
             let handledKeys = {}
-            let syncResult: SyncResult<Entity> = {
+            let syncResult: SyncResponse<Entity> = {
                 syncedEntities: [],
                 newEntities: [],
                 conflictedEntities: [],
@@ -160,11 +160,11 @@ export class LeanSyncServer<Entity> {
         })
     }
 
-    async resolveConflict(resolvedEntity: Entity, lastSynced: Date): Promise<ConflictResolutionResult<Entity>> {
+    async resolveConflict(resolvedEntity: Entity, lastSynced: Date): Promise<ConflictResolutionResponse<Entity>> {
 
-        return new Promise<ConflictResolutionResult<Entity>>(async (resolve, reject) => {
+        return new Promise<ConflictResolutionResponse<Entity>>(async (resolve, reject) => {
             let syncStamp = new Date()
-            let result: ConflictResolutionResult<Entity> = { syncStamp }
+            let result: ConflictResolutionResponse<Entity> = { syncStamp }
 
             this.config.startTransaction?.()
             try {

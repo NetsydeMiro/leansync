@@ -1,4 +1,4 @@
-import { SyncResult, ModifiedEntity, isFunction } from '../src/shared'
+import { SyncResponse, ModifiedEntity, isFunction } from '../src/shared'
 import { Note, newNote } from '../support/Note'
 import { LeanSyncClientConfig, LeanSyncClient, ConnectivityError } from '../src/LeanSyncClient'
 
@@ -18,8 +18,8 @@ function mockConfig(configParams?: Partial<LeanSyncClientConfig<Note>>): LeanSyn
     return config
 }
 
-function mockSyncResult(syncParams?: Partial<SyncResult<Note>>): SyncResult<Note> {
-    let result: SyncResult<Note> =
+function mockSyncResult(syncParams?: Partial<SyncResponse<Note>>): SyncResponse<Note> {
+    let result: SyncResponse<Note> =
         Object.assign({
             newEntities: [],
             syncedEntities: [],
@@ -46,7 +46,7 @@ describe('LeanSyncClient', () => {
             let config = mockConfig({ getLastSyncStamp, getClientEntitiesRequiringSync, syncWithServer })
 
             let leanSyncClient = new LeanSyncClient(config)
-            leanSyncClient.processSyncResult = jest.fn()
+            leanSyncClient.processSyncResponse = jest.fn()
 
             await leanSyncClient.sync()
 
@@ -67,7 +67,7 @@ describe('LeanSyncClient', () => {
 
             let leanSyncClient = new LeanSyncClient(config)
             let processSyncResult = jest.fn()
-            leanSyncClient.processSyncResult = processSyncResult
+            leanSyncClient.processSyncResponse = processSyncResult
 
             await leanSyncClient.sync()
 
@@ -109,7 +109,7 @@ describe('LeanSyncClient', () => {
             let newEntities = [newNote('Note1'), newNote('Note2')]
             let syncResult = mockSyncResult({ newEntities })
 
-            await leanSyncClient.processSyncResult(syncResult)
+            await leanSyncClient.processSyncResponse(syncResult)
 
             expect(createEntity).toHaveBeenCalledTimes(newEntities.length)
             for (let ix = 0; ix < newEntities.length; ix++) {
@@ -126,7 +126,7 @@ describe('LeanSyncClient', () => {
             let syncedEntities: Array<ModifiedEntity<Note>> = [{ entity: newNote('Note1'), clientKey: 'a' }, { entity: newNote('Note2') }]
             let syncResult = mockSyncResult({ syncedEntities })
 
-            await leanSyncClient.processSyncResult(syncResult)
+            await leanSyncClient.processSyncResponse(syncResult)
 
             expect(updateEntity).toHaveBeenCalledTimes(syncedEntities.length)
             for (let ix = 0; ix < syncedEntities.length; ix++) {
@@ -143,7 +143,7 @@ describe('LeanSyncClient', () => {
             let conflictedEntities: Array<Note> = [newNote('Note1'), newNote('Note2')]
             let syncResult = mockSyncResult({ conflictedEntities })
 
-            await leanSyncClient.processSyncResult(syncResult)
+            await leanSyncClient.processSyncResponse(syncResult)
 
             expect(markRequiringConflictResolution).toHaveBeenCalledTimes(conflictedEntities.length)
             for (let ix = 0; ix < conflictedEntities.length; ix++) {
@@ -159,7 +159,7 @@ describe('LeanSyncClient', () => {
 
             let syncResult = mockSyncResult()
 
-            await leanSyncClient.processSyncResult(syncResult)
+            await leanSyncClient.processSyncResponse(syncResult)
 
             expect(markSyncStamp).toHaveBeenCalledWith(syncResult.syncStamp)
         })

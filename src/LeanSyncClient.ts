@@ -1,4 +1,4 @@
-import { SyncResult, ConflictResolutionResult, KeySelector } from './shared'
+import { SyncResponse, ConflictResolutionResponse, KeySelector } from './shared'
 
 export class ConnectivityError extends Error { }
 
@@ -16,8 +16,8 @@ export interface LeanSyncClientConfig<Entity> {
     markRequiringConflictResolution?: (entity: Entity, syncStamp: Date) => Promise<void>
 
     // communicating with server store
-    syncWithServer: (entities: Array<Entity>, lastSync: Date) => Promise<SyncResult<Entity>>
-    resolveConflictWithServer?: (entity: Entity) => Promise<ConflictResolutionResult<Entity>>
+    syncWithServer: (entities: Array<Entity>, lastSync: Date) => Promise<SyncResponse<Entity>>
+    resolveConflictWithServer?: (entity: Entity) => Promise<ConflictResolutionResponse<Entity>>
 }
 
 export class LeanSyncClient<Entity> {
@@ -35,7 +35,7 @@ export class LeanSyncClient<Entity> {
 
             let syncResult = await this.config.syncWithServer(clientEntities, lastSync)
 
-            await this.processSyncResult(syncResult)
+            await this.processSyncResponse(syncResult)
         }
         catch(ex) {
             // we do nothing if we can't connect at the moment, and allow the next sync to handle it
@@ -46,7 +46,10 @@ export class LeanSyncClient<Entity> {
     }
 
     // TODO: add transaction support?
-    async processSyncResult(syncResult: SyncResult<Entity>) {
+    // TODO: investigate push discrepancies... 
+    // Do we need to handle the case where a push might be received when we've updated our version?  
+    // Mark it as requiring conflict?  I think just ignore it, and wait until next sync in that case
+    async processSyncResponse(syncResult: SyncResponse<Entity>) {
         for (let newEntity of syncResult.newEntities) {
             await this.config.createEntity(newEntity, syncResult.syncStamp)
         }

@@ -1,4 +1,4 @@
-import { LeanSyncServer, LeanSyncServerConfig, ConflictResolutionStrategy, CustomConflictResolver } from '../src/LeanSyncServer'
+import { LeanSyncServer, LeanSyncServerConfig, ConflictResolutionStrategy } from '../src/LeanSyncServer'
 import { Note, newNote } from '../support/Note'
 
 function mockConfig(conflictResolutionStrategy: ConflictResolutionStrategy<Note> = 'takeClient'): LeanSyncServerConfig<Note> {
