@@ -14,9 +14,12 @@ export interface KeyGenerator {
 export class MockSyncedTable<EntityType extends Entity> {
 
     constructor(
-        public rows: Array<EntityType> = [], 
-        public newKey: KeyGenerator = () => v1().toString()) 
-    { }
+        rows: Array<EntityType> = [],
+        public newKey: KeyGenerator = () => v1().toString()) {
+        this.rows = this.clone(rows)
+    }
+
+    rows: Array<EntityType>
 
     protected clone = (rows: Array<EntityType>) => rows.map(r => Object.assign({}, r))
 
@@ -30,14 +33,12 @@ export class MockSyncedTable<EntityType extends Entity> {
         return this.clone(rows)
     }
 
-    async update(entity: EntityType, syncStamp: Date, newKey?: any): Promise<EntityType> {
-        let row = this.rows.find(r => r.id == entity.id)
+    async update(entity: EntityType, syncStamp: Date, originalKey?: any): Promise<EntityType> {
+        let row = this.rows.find(r => r.id == (originalKey || entity.id))
 
         for(let key of Object.keys(entity)) {
             row[key] = entity[key]
         }
-
-        if (newKey) row.id = newKey
 
         row.syncedAt = syncStamp
 
