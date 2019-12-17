@@ -1,4 +1,4 @@
-import { Note, NotesDatabase, newNote } from '../support/Note'
+import { Note, NotesDatabase, newNote } from './Note'
 import { BasicConflictResolutionStrategy, LeanSyncServer, LeanSyncServerConfig } from '../src/LeanSyncServer'
 import { LeanSyncClient, LeanSyncClientConfig } from '../src/LeanSyncClient'
 import { assertNever } from '../src/shared'
@@ -19,11 +19,9 @@ export interface MockNetwork {
     clients: Array<MockClient>
 }
 
-export function initNetwork(): MockNetwork {
-    return {
-        server: { notes: [], resolutionStrategy: 'takeClient' }, 
-        clients: [], 
-    }
+export const initialNetwork: MockNetwork = {
+    server: { notes: [], resolutionStrategy: 'takeClient' },
+    clients: [],
 }
 
 interface SetResolutionStrategyAction {
@@ -31,7 +29,7 @@ interface SetResolutionStrategyAction {
     strategy: BasicConflictResolutionStrategy
 }
 
-function setResolutionStrategy(network: MockNetwork, resolutionStrategy): MockNetwork {
+function setResolutionStrategy(network: MockNetwork, resolutionStrategy: BasicConflictResolutionStrategy): MockNetwork {
     let nw = { ...network }
 
     nw.server = { ...network.server, resolutionStrategy }
@@ -81,6 +79,8 @@ function setClientOffline(network: MockNetwork, clientIndex: number, isOffline: 
     return nw
 }
 
+/*
+
 interface AddNoteAction {
     type: 'addNote'
     clientIndex: number
@@ -123,31 +123,33 @@ function updateNote(network: MockNetwork, clientIndex: number, note: Note): Mock
 
     return nw
 }
+*/
 
 interface SyncAction {
     type: 'sync'
     clientIndex: number
+    clientNotes: Array<Note>
 }
 
-async function sync(network: MockNetwork, clientIndex: number): Promise<MockNetwork> {
+async function sync(network: MockNetwork, clientIndex: number, clientNotes: Array<Note>): Promise<MockNetwork> {
     let nw = { ...network }
 
     nw.clients = network.clients.slice()
 
-    let newClient = { ...network.clients[clientIndex] }
-    let clientDb = new NotesDatabase(newClient.notes)
-
     let newServer = { ...network.server }
-    let newServerDb = new NotesDatabase(newServer.notes)
+    let serverDb = new NotesDatabase(newServer.notes)
+
+    let newClient = { ...network.clients[clientIndex] }
+    let clientDb = new NotesDatabase(clientNotes)
 
     let serverConfig: LeanSyncServerConfig<Note> = {
         entityKey: (note) => note.id,
         entityLastUpdated: (note) => note.updatedAt, 
         areEntitiesEqual: (note1, note2) => note1.text == note2.text, 
-        getServerEntities: (keys) => newServerDb.getByKey(keys), 
-        getServerEntitiesSyncedSince: (syncStamp) => newServerDb.getSyncedSince(syncStamp), 
-        updateServerEntity: (clientEntity, syncStamp) => newServerDb.update(clientEntity, syncStamp), 
-        createServerEntity: (clientEntity, syncStamp) => newServerDb.add(clientEntity, syncStamp), 
+        getServerEntities: (keys) => serverDb.getByKey(keys), 
+        getServerEntitiesSyncedSince: (syncStamp) => serverDb.getSyncedSince(syncStamp), 
+        updateServerEntity: (clientEntity, syncStamp) => serverDb.update(clientEntity, syncStamp), 
+        createServerEntity: (clientEntity, syncStamp) => serverDb.add(clientEntity, syncStamp), 
         conflictResolutionStrategy: newServer.resolutionStrategy
     }
 
@@ -170,6 +172,9 @@ async function sync(network: MockNetwork, clientIndex: number): Promise<MockNetw
 
     await leanClient.sync()
 
+    newServer.notes = serverDb.rows
+    newClient.notes = clientDb.rows
+
     nw.server = newServer
     nw.clients[clientIndex] = newClient
 
@@ -181,8 +186,10 @@ export type ActionType =
     AddClientAction | 
     RemoveClientAction | 
     SetClientOfflineAction | 
+    /*
     AddNoteAction | 
     UpdateNoteAction | 
+    */
     SyncAction
 
 export function mockNetworkReducer(network: MockNetwork, action: ActionType ): MockNetwork {
@@ -193,9 +200,11 @@ export function mockNetworkReducer(network: MockNetwork, action: ActionType ): M
         case 'addClient': addClient(network); break
         case 'removeClient': removeClient(network, action.clientIndex); break
         case 'setClientOffline': setClientOffline(network, action.clientIndex, action.isOffline); break
+        /*
         case 'addNote': addNote(network, action.clientIndex); break
         case 'updateNote': updateNote(network, action.clientIndex, action.note); break
-        case 'sync': sync(network, action.clientIndex); break
+        */
+        case 'sync': sync(network, action.clientIndex, action.clientNotes); break
         default: assertNever(action)
     }
 
