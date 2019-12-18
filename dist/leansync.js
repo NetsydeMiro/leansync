@@ -14,6 +14,7 @@
         return obj && {}.toString.call(obj) === '[object Function]';
     }
 
+    const BASIC_CONFLICT_RESOLUTION_STRATEGIES = ["takeServer", "takeClient", "lastUpdated", "askClient"];
     class LeanSyncServer {
         constructor(config) {
             this.config = config;
@@ -160,10 +161,13 @@
         }
         async sync() {
             try {
-                let [lastSync, clientEntities] = await Promise.all([
+                let [clientEntities, lastSync] = await Promise.all([
+                    this.config.getClientEntitiesRequiringSync(),
                     this.config.getLastSyncStamp(),
-                    this.config.getClientEntitiesRequiringSync()
                 ]);
+                // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
+                // TODO: look into this
+                clientEntities = (clientEntities !== null && clientEntities !== void 0 ? clientEntities : []);
                 let syncResult = await this.config.syncWithServer(clientEntities, lastSync);
                 await this.processSyncResponse(syncResult);
             }
@@ -193,6 +197,7 @@
         }
     }
 
+    exports.BASIC_CONFLICT_RESOLUTION_STRATEGIES = BASIC_CONFLICT_RESOLUTION_STRATEGIES;
     exports.ConnectivityError = ConnectivityError;
     exports.LeanSyncClient = LeanSyncClient;
     exports.LeanSyncServer = LeanSyncServer;

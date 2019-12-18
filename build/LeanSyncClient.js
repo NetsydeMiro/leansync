@@ -6,10 +6,13 @@ export class LeanSyncClient {
     }
     async sync() {
         try {
-            let [lastSync, clientEntities] = await Promise.all([
+            let [clientEntities, lastSync] = await Promise.all([
+                this.config.getClientEntitiesRequiringSync(),
                 this.config.getLastSyncStamp(),
-                this.config.getClientEntitiesRequiringSync()
             ]);
+            // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
+            // TODO: look into this
+            clientEntities = (clientEntities !== null && clientEntities !== void 0 ? clientEntities : []);
             let syncResult = await this.config.syncWithServer(clientEntities, lastSync);
             await this.processSyncResponse(syncResult);
         }
