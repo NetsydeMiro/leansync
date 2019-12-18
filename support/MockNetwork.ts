@@ -192,19 +192,20 @@ export type ActionType =
     */
     SyncAction
 
-export function mockNetworkReducer(network: MockNetwork, action: ActionType ): MockNetwork {
+export async function mockNetworkReducer(network: MockNetwork, action: ActionType ): Promise<MockNetwork> {
     let modifiedNetwork: MockNetwork
 
     switch(action.type) {
-        case 'setResolutionStrategy': setResolutionStrategy(network, action.strategy); break
-        case 'addClient': addClient(network); break
-        case 'removeClient': removeClient(network, action.clientIndex); break
-        case 'setClientOffline': setClientOffline(network, action.clientIndex, action.isOffline); break
-        /*
-        case 'addNote': addNote(network, action.clientIndex); break
-        case 'updateNote': updateNote(network, action.clientIndex, action.note); break
-        */
-        case 'sync': sync(network, action.clientIndex, action.clientNotes); break
+        case 'setResolutionStrategy': 
+            modifiedNetwork = setResolutionStrategy(network, action.strategy); break
+        case 'addClient': 
+            modifiedNetwork = addClient(network); break
+        case 'removeClient': 
+            modifiedNetwork = removeClient(network, action.clientIndex); break
+        case 'setClientOffline': 
+            modifiedNetwork = setClientOffline(network, action.clientIndex, action.isOffline); break
+        case 'sync': 
+            modifiedNetwork = await sync(network, action.clientIndex, action.clientNotes); break
         default: assertNever(action)
     }
 

@@ -44,7 +44,7 @@ export class LeanSyncServer<Entity> {
             this.config.startTransaction?.()
 
             let syncStamp = new Date()
-            let handledKeys = {}
+            let handledKeys: { [key: string]: boolean } = {}
             let syncResult: SyncResponse<Entity> = {
                 syncedEntities: [],
                 newEntities: [],

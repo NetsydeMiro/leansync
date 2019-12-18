@@ -5,7 +5,7 @@ import { LeanSyncClientConfig, LeanSyncClient, ConnectivityError } from '../src/
 function mockConfig(configParams?: Partial<LeanSyncClientConfig<Note>>): LeanSyncClientConfig<Note> {
     let config: LeanSyncClientConfig<Note> =
         Object.assign({
-            keySelector: (note) => note.id,
+            keySelector: (note: Note) => note.id,
             getClientEntitiesRequiringSync: jest.fn(),
             getClientEntities: jest.fn(),
             getLastSyncStamp: jest.fn(),

@@ -30,14 +30,19 @@ export class MockSyncedTable<EntityType extends Entity> {
     }
 
     async getSyncedSince(syncStamp?: Date): Promise<Array<EntityType>> {
-        let rows = this.rows.filter(r => !syncStamp || r.syncedAt > syncStamp)
+        let rows = this.rows.filter(r => !syncStamp || r.syncedAt && (r.syncedAt > syncStamp))
         return this.clone(rows)
     }
 
     async update(entity: EntityType, syncStamp: Date, originalKey?: any): Promise<EntityType> {
         let row = this.rows.find(r => r.id == (originalKey || entity.id))
 
-        for(let key of Object.keys(entity)) {
+        if (!row) {
+            row = {} as EntityType
+            this.rows.push(row)
+        }
+
+        for(let key of Object.keys(entity) as Array<keyof EntityType>) {
             row[key] = entity[key]
         }
 

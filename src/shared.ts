@@ -4,7 +4,7 @@ export interface ModifiedEntity<Entity> {
 }
 
 export function isModifiedEntity<Entity>(obj: Entity | ModifiedEntity<Entity>): obj is ModifiedEntity<Entity> {
-    return !!obj['entity']
+    return !!(obj as ModifiedEntity<Entity>)['entity']
 }
 
 export interface KeySelector<Entity> {

@@ -46,7 +46,7 @@ describe('LeanSyncServer', () => {
         for(let ix = 0; ix < db.rows.length; ix++) {
             expect(db.rows[ix].text).toBe(clientNotes[ix].text)
             expect(db.rows[ix].id).toBe(clientNotes[ix].id)
-            expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
+            expect(db.rows[ix].syncedAt?.getTime()).toBeGreaterThanOrEqual(testStart.getTime())
         }
 
         expect(syncResult.newEntities.length).toBe(0)
@@ -101,7 +101,7 @@ describe('LeanSyncServer', () => {
         // db rows should be updated
         for(let ix = 0; ix < clientNotes.length; ix++) {
             expect(db.rows[ix].text).toBe(clientNotes[ix].text)
-            expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(clientNotes[ix].syncedAt.getTime())
+            expect(db.rows[ix].syncedAt?.getTime()).toBeGreaterThanOrEqual(clientNotes[ix].syncedAt!.getTime())
         }
         expect(db.rows[0].syncedAt).toEqual(db.rows[1].syncedAt)
 
@@ -154,7 +154,7 @@ describe('LeanSyncServer', () => {
         // db rows should be updated
         for(let ix = 0; ix < clientNotes.length; ix++) {
             expect(db.rows[ix].text).toBe(clientNotes[ix].text)
-            expect(db.rows[ix].syncedAt.getTime()).toBeGreaterThanOrEqual(clientNotes[ix].syncedAt.getTime())
+            expect(db.rows[ix].syncedAt?.getTime()).toBeGreaterThanOrEqual(clientNotes[ix].syncedAt!.getTime())
         }
         expect(db.rows[0].syncedAt).toEqual(db.rows[1].syncedAt)
 

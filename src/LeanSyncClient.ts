@@ -7,7 +7,7 @@ export interface LeanSyncClientConfig<Entity> {
     // pulling from client store
     getClientEntitiesRequiringSync: () => Promise<Array<Entity>>
     getClientEntities: (keys: Array<any>) => Promise<Array<Entity>>
-    getLastSyncStamp: () => Promise<Date>
+    getLastSyncStamp: () => Promise<Date|undefined>
     markSyncStamp: (syncStamp: Date) => Promise<void>
 
     // writing to client store
@@ -16,7 +16,7 @@ export interface LeanSyncClientConfig<Entity> {
     markRequiringConflictResolution?: (entity: Entity, syncStamp: Date) => Promise<void>
 
     // communicating with server store
-    syncWithServer: (entities: Array<Entity>, lastSync: Date) => Promise<SyncResponse<Entity>>
+    syncWithServer: (entities: Array<Entity>, lastSync?: Date) => Promise<SyncResponse<Entity>>
     resolveConflictWithServer?: (entity: Entity) => Promise<ConflictResolutionResponse<Entity>>
 }
 
@@ -26,12 +26,16 @@ export class LeanSyncClient<Entity> {
     async sync() {
         try {
             let [
-                lastSync, 
-                clientEntities
+                clientEntities, 
+                lastSync
             ] = await Promise.all([
+                this.config.getClientEntitiesRequiringSync(), 
                 this.config.getLastSyncStamp(), 
-                this.config.getClientEntitiesRequiringSync()
             ])
+ 
+            // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
+            // TODO: look into this
+            clientEntities = clientEntities ?? []
 
             let syncResult = await this.config.syncWithServer(clientEntities, lastSync)
 
