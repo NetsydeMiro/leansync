@@ -7,6 +7,7 @@
         "TypeScript"
     ],
     "main": "build/index.js",
+    "types": "build/index.d.ts",
     "scripts": {
         "start": "npm run dev",
         "dev": "jest --watch",
@@ -24,8 +25,8 @@
         "url": "https://github.com/NetsydeMiro/leansync.git"
     },
     "files": [
-        "build/**/*.js",
-        "dist/**/*.js"
+        "build/**/*",
+        "dist/**/*"
     ],
     "devDependencies": {
         "@types/jest": "^24.0.23",
