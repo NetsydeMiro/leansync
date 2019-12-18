@@ -11,6 +11,7 @@ export interface KeyGenerator {
     (): any
 }
 
+// TODO: refactor as dictionary instead of array of rows?
 export class MockSyncedTable<EntityType extends Entity> {
 
     constructor(

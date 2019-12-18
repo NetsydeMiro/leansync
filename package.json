@@ -2,14 +2,19 @@
   "name": "leansync",
   "version": "0.0.1",
   "description": "Minimal, non-opinionated, single server, multiple client sync algorithm.",
-  "keywords": ["Sync", "TypeScript"],
-  "main": "dist/index.js",
+  "keywords": [
+    "Sync",
+    "TypeScript"
+  ],
+  "main": "build/index.js",
   "scripts": {
     "start": "npm run dev",
-    "dev": "jest --watch", 
+    "dev": "jest --watch",
     "test": "jest",
     "compile": "tsc",
-    "coverage": "jest --coverage --collectCoverageFrom=src/*.ts", 
+    "bundle": "rollup -c",
+    "minify": "terser --source-map --output dist/leansync.min.js dist/leansync.js",
+    "coverage": "jest --coverage --collectCoverageFrom=src/*.ts",
     "report_coverage": "jest --coverage --collectCoverageFrom=src/*.ts --coverageReporters=text-lcov | coveralls"
   },
   "author": "Miro Koprnicky",
@@ -19,6 +24,8 @@
     "@types/uuid": "^3.4.6",
     "coveralls": "^3.0.9",
     "jest": "^24.9.0",
+    "rollup": "^1.27.13",
+    "terser": "^4.4.3",
     "ts-jest": "^24.2.0",
     "typescript": "^3.7.2",
     "uuid": "^3.3.3"

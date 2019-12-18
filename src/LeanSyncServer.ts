@@ -2,6 +2,9 @@ import { SyncResponse, isFunction, assertNever, ConflictResolutionResponse, KeyS
 
 export type BasicConflictResolutionStrategy = "takeServer" | "takeClient" | "lastUpdated" | "askClient"
 
+export const BASIC_CONFLICT_RESOLUTION_STRATEGIES: Array<BasicConflictResolutionStrategy> =
+    ["takeServer", "takeClient", "lastUpdated", "askClient"]
+
 export interface CustomConflictResolver<Entity> {
     (this: LeanSyncServerConfig<Entity>, clientEntity: Entity, serverEntity: Entity, syncStamp: Date, result: SyncResponse<Entity>): void
 }
@@ -132,7 +135,7 @@ export class LeanSyncServer<Entity> {
                                 // due to a collision, or because temp keys are used at client 
                                 // we inform the user that a new key has been assigned 
                                 syncResult.syncedEntities.push({ entity: createdEntity, clientKey })
-                            } 
+                            }
                             else syncResult.syncedEntities.push({ entity: createdEntity })
                         }
 
