@@ -17,6 +17,7 @@ export declare class LeanSyncClient<Entity> {
     private config;
     constructor(config: LeanSyncClientConfig<Entity>);
     sync(): Promise<void>;
+    sendSyncRequest(): Promise<SyncResponse<Entity>>;
     processSyncResponse(syncResult: SyncResponse<Entity>): Promise<void>;
 }
 export default LeanSyncClient;

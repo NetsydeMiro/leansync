@@ -25,19 +25,7 @@ export class LeanSyncClient<Entity> {
 
     async sync() {
         try {
-            let [
-                clientEntities, 
-                lastSync
-            ] = await Promise.all([
-                this.config.getClientEntitiesRequiringSync(), 
-                this.config.getLastSyncStamp(), 
-            ])
- 
-            // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
-            // TODO: look into this
-            clientEntities = clientEntities ?? []
-
-            let syncResult = await this.config.syncWithServer(clientEntities, lastSync)
+            let syncResult = await this.sendSyncRequest()
 
             await this.processSyncResponse(syncResult)
         }
@@ -49,11 +37,27 @@ export class LeanSyncClient<Entity> {
         }
     }
 
+    async sendSyncRequest(): Promise<SyncResponse<Entity>> {
+        let [
+            clientEntities,
+            lastSync
+        ] = await Promise.all([
+            this.config.getClientEntitiesRequiringSync(),
+            this.config.getLastSyncStamp(),
+        ])
+
+        // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
+        // TODO: look into this
+        clientEntities = clientEntities ?? []
+
+        return this.config.syncWithServer(clientEntities, lastSync)
+    }
+
     // TODO: add transaction support?
     // TODO: investigate push discrepancies... 
     // Do we need to handle the case where a push might be received when we've updated our version?  
     // Mark it as requiring conflict?  I think just ignore it, and wait until next sync in that case
-    async processSyncResponse(syncResult: SyncResponse<Entity>) {
+    async processSyncResponse(syncResult: SyncResponse<Entity>) : Promise<void> {
         for (let newEntity of syncResult.newEntities) {
             await this.config.createEntity(newEntity, syncResult.syncStamp)
         }

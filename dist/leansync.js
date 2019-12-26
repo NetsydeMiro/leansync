@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = global || self, factory(global.leansync = {}));
+    (global = global || self, factory(global.LeanSync = {}));
 }(this, (function (exports) { 'use strict';
 
     function findCorrespondingEntity(entities, entity, keySelector) {
@@ -161,14 +161,7 @@
         }
         async sync() {
             try {
-                let [clientEntities, lastSync] = await Promise.all([
-                    this.config.getClientEntitiesRequiringSync(),
-                    this.config.getLastSyncStamp(),
-                ]);
-                // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
-                // TODO: look into this
-                clientEntities = (clientEntities !== null && clientEntities !== void 0 ? clientEntities : []);
-                let syncResult = await this.config.syncWithServer(clientEntities, lastSync);
+                let syncResult = await this.sendSyncRequest();
                 await this.processSyncResponse(syncResult);
             }
             catch (ex) {
@@ -177,6 +170,16 @@
                 if (!(ex instanceof ConnectivityError))
                     throw ex;
             }
+        }
+        async sendSyncRequest() {
+            let [clientEntities, lastSync] = await Promise.all([
+                this.config.getClientEntitiesRequiringSync(),
+                this.config.getLastSyncStamp(),
+            ]);
+            // This shouldn't be necessary... not sure why clientEntities is being unioned with undefined just because lastSync is
+            // TODO: look into this
+            clientEntities = (clientEntities !== null && clientEntities !== void 0 ? clientEntities : []);
+            return this.config.syncWithServer(clientEntities, lastSync);
         }
         // TODO: add transaction support?
         // TODO: investigate push discrepancies... 

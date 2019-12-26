@@ -4,6 +4,6 @@ export default {
     output: {
       file: 'dist/leansync.js',
       format: 'umd', 
-      name: 'leansync'
+      name: 'LeanSync'
     }
   }
