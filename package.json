@@ -34,7 +34,7 @@
         "coveralls": "^3.0.9",
         "jest": "^24.9.0",
         "rollup": "^1.27.13",
-        "terser": "^4.4.3",
+        "terser": "^4.8.1",
         "ts-jest": "^24.2.0",
         "typescript": "^3.7.2",
         "uuid": "^3.3.3"
